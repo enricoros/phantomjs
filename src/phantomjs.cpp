@@ -30,6 +30,7 @@
 
 #include <QtGui>
 #include <QtWebKit>
+#include <QProcess>
 #include <iostream>
 
 #include <gifwriter.h>
@@ -207,6 +208,7 @@ public slots:
     void setFormInputFile(QWebElement el, const QString &fileTag);
     bool render(const QString &fileName);
     void sleep(int ms);
+    QString shell(const QString &command) const;
 
 private slots:
     void inject();
@@ -484,6 +486,17 @@ void Phantom::sleep(int ms)
     }
 }
 
+QString Phantom::shell(const QString &command) const
+{
+    int retCode = QProcess::execute(command);
+    switch (retCode) {
+    case -1:
+        return "[crashed]";
+    case -2:
+        return "[cannot start the process]";
+    }
+    return QString::number(retCode);
+}
 
 void Phantom::setFormInputFile(QWebElement el, const QString &fileTag)
 {
