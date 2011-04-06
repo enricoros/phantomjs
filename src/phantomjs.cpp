@@ -120,6 +120,44 @@ QString WebPage::chooseFile(QWebFrame *parentFrame, const QString &suggestedFile
     return QString();
 }
 
+class UnsecureNetworkAccessManager : public QNetworkAccessManager
+{
+    Q_OBJECT
+
+public:
+    UnsecureNetworkAccessManager();
+
+private slots:
+    void doAuthentication(QNetworkReply *reply, QAuthenticator *authenticator);
+#ifndef QT_NO_OPENSSL
+    void acceptSslErrors(QNetworkReply *reply, const QList<QSslError> &errors);
+#endif
+};
+
+UnsecureNetworkAccessManager::UnsecureNetworkAccessManager()
+{
+    connect(this, SIGNAL(authenticationRequired(QNetworkReply*,QAuthenticator*)),
+            this, SLOT(doAuthentication(QNetworkReply*,QAuthenticator*)));
+#ifndef QT_NO_OPENSSL
+    connect(this, SIGNAL(sslErrors(QNetworkReply*,QList<QSslError>)),
+            this, SLOT(acceptSslErrors(QNetworkReply*,QList<QSslError>)));
+#endif
+}
+
+void UnsecureNetworkAccessManager::doAuthentication(QNetworkReply *reply, QAuthenticator *authenticator)
+{
+    std::cout << "Authentication required, skipping." << std::endl;
+}
+
+#ifndef QT_NO_OPENSSL
+void UnsecureNetworkAccessManager::acceptSslErrors(QNetworkReply *reply, const QList<QSslError> &errors)
+{
+    foreach (const QSslError &error, errors)
+        std::cout << "Security Problem: ignoring SSL error: '" << qPrintable(error.errorString()) << std::endl;
+    reply->ignoreSslErrors();
+}
+#endif
+
 class Phantom: public QObject
 {
     Q_OBJECT
@@ -270,6 +308,9 @@ Phantom::Phantom(QObject *parent)
         QNetworkProxy proxy(QNetworkProxy::HttpProxy, m_proxyHost, m_proxyPort);
         QNetworkProxy::setApplicationProxy(proxy);
     }
+
+    // Use a custom HTTP/HTTPS connection manager
+    m_page.setNetworkAccessManager(new UnsecureNetworkAccessManager());
 
     // The remaining arguments are available for the script.
     while (argIterator.hasNext()) {
