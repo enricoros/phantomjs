@@ -145,16 +145,17 @@ UnsecureNetworkAccessManager::UnsecureNetworkAccessManager()
 #endif
 }
 
-void UnsecureNetworkAccessManager::doAuthentication(QNetworkReply *reply, QAuthenticator *authenticator)
+void UnsecureNetworkAccessManager::doAuthentication(QNetworkReply *, QAuthenticator *)
 {
     std::cout << "Authentication required, skipping." << std::endl;
 }
 
 #ifndef QT_NO_OPENSSL
-void UnsecureNetworkAccessManager::acceptSslErrors(QNetworkReply *reply, const QList<QSslError> &errors)
+void UnsecureNetworkAccessManager::acceptSslErrors(QNetworkReply *reply, const QList<QSslError> &)
 {
-    foreach (const QSslError &error, errors)
-        std::cout << "Security Problem: ignoring SSL error: '" << qPrintable(error.errorString()) << std::endl;
+    // don't bloat the output
+    //foreach (const QSslError &error, errors)
+    //    std::cout << "Security Problem: ignoring SSL error: '" << qPrintable(error.errorString()) << std::endl;
     reply->ignoreSslErrors();
 }
 #endif
